@@ -1,28 +1,25 @@
-
 const express = require('express');
 const connectDB = require('./config/dbConfig');
+const BookingRoute = require('./Modules/booking/bookingsRoute');
 require('dotenv').config();
-const bookingsRoute = require('./Modules/booking/bookingsRoute');
-// middleware
+
 const app = express();
 
+// Connect to database
 connectDB();
 
-//Middleware
+// Middleware
 app.use(express.json());
 
-//Routes
+// Register Routes
+app.use('/api/bookings', BookingRoute); // Ensure this is correctly defined
 
-app.use('/api/bookings', bookingsRoute);
-
-
-
-//Home
+// Home route
 app.get('/', (req, res) => {
-  res.send("Server is okay")
-})
+  res.send("Server is okay");
+});
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
-})
+  console.log(`Server is running on port ${PORT}`);
+});

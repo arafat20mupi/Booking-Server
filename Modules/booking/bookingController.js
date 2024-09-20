@@ -1,56 +1,62 @@
 const Booking = require('./BookingSchema');
 const validateBooking = require('./validateBooking');
-//create booking
-exports.createBooking = async (req, res) => {
 
+// Create Booking
+exports.createBooking = async (req, res) => {
     const { data, purpose } = req.body;
     try {
-        if (!data && !purpose) {
-            res.status(400).json({ message: "data or purpose is not found" });
+        // Check if data and purpose are provided
+        if (!data) {
+            return res.status(400).json({ message: "Date is required" });
+        }
+        if (!purpose) {
+            return res.status(400).json({ message: "Purpose is required" });
         }
 
         // Parse and format the date
-        let formattedDate;
         const parsedDate = new Date(data);
-        // Check if the parsedDate is valid
         if (isNaN(parsedDate.getTime())) {
             return res.status(400).json({ message: "Invalid date format" });
         }
-        const existingBooking = await Booking.findOne({ data: formattedDate });
+        const formattedDate = parsedDate; // Save the parsed date for querying
 
+        // Check if booking already exists for the same date
+        const existingBooking = await Booking.findOne({ data: formattedDate });
         if (existingBooking) {
             return res.status(400).json({ message: 'Booking with this date already exists' });
         }
-        const { error } = validateBooking({ data, purpose });
 
+        // Validate booking data
+        const { error } = validateBooking({ data, purpose });
         if (error) {
-        return res.status(400).send(error.details[0].message);
-    
+            return res.status(400).send(error.details[0].message);
         }
 
+        // Create new booking
         const booking = new Booking({
             user: req.user.id,
-            data,
+            data: formattedDate, // Use the validated date
             purpose
-        })
-        // console.log(booking);
+        });
+
         await booking.save();
         res.status(201).json(booking);
 
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message }); // Use 500 for server errors
     }
 }
-//get booking
+
+// Get Bookings
 exports.getBooking = async (req, res) => {
     try {
-
         const bookings = await Booking.find({ user: req.user.id });
-        if (!bookings) {
-            res.status(400).json({ message: "bookings are not found" });
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ message: "No bookings found" }); // 404 for not found
         }
-        res.json(bookings)
+        res.json(bookings);
+
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message }); 
     }
 }
